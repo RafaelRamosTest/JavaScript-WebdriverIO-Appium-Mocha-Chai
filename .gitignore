@@ -1,0 +1,40 @@
+# Dependências do Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Logs e Relatórios do WebdriverIO
+logs/
+allure-results/
+allure-report/
+junit/
+.eslintcache
+
+# Arquivos de Sistema e IDEs
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Evite subir credenciais ou variáveis de ambiente locais
+.env
+.env.local
+
+# Se você baixa os arquivos .apk ou .app direto na raiz do projeto para testar
+*.apk
+*.aab
+*.app
+*.ipa
+
+# Relatórios de testes (gerados automaticamente)
+reports/
+
+# Binários de aplicativos (os APKs que ficam dentro da pasta apps)
+apps/*.apk
