@@ -15,12 +15,13 @@ class LoginPage extends BasePage {
     get btnSubmitSignUp() { return $('~button-SIGN UP'); }
 
     // Mensagens de Validação de Erro
-    get errorInvalidEmail() { return $('text=Please enter a valid email address'); }
-    get errorShortPassword() { return $('text=Please enter at least 8 characters'); }
+    get errorInvalidEmail() { return $('//*[@text="Please enter a valid email address"]'); }
+    get errorShortPassword() { return $('//*[@text="Please enter at least 8 characters"]'); }
 
-    // Alerta de Sucesso (Pop-up nativo)
-    get alertTitleAndroid() { return $('id=android:id/alertTitle'); }
-    get alertTitleIOS() { return $('*//XCUIElementTypeAlert'); }
+    // Alerta Nativos de Sucesso (Android) - Mapeados via Inspector
+    get alertTitleSuccess() { return $('//*[@resource-id="com.wdiodemoapp:id/alert_title"]'); }
+    get alertMessageSuccess() { return $('//*[@resource-id="android:id/message"]'); }
+    get btnAlertOk() { return $('//*[@resource-id="android:id/button1"]'); }
 
     // Métodos Auxiliares de Ação
     async preencherLogin(email, senha) {

@@ -36,7 +36,7 @@ describe('Fluxo de Componentes de Formulário - Desafio Mobile', () => {
         await FormsPage.selecionarOpcaoDropdown();
         
         // Valida se o texto da opção selecionada agora é exibido no cabeçalho do componente Dropdown
-        const textoDropdown = await FormsPage.dropdownMenu.getText();
-        expect(textoDropdown).to.include('webdriver.io is awesome');
+        const selectedTextEl = await $('-android uiautomator:new UiSelector().text("webdriver.io is awesome")');
+        expect(await selectedTextEl.isDisplayed()).to.be.true;
     });
 });

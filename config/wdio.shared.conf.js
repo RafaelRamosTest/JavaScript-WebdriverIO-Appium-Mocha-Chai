@@ -11,7 +11,7 @@ exports.config = {
   framework: 'mocha',
   mochaOpts: {
     ui: 'bdd',
-    timeout: 60000,
+    timeout: 6000,
   },
 
   // Hooks globais

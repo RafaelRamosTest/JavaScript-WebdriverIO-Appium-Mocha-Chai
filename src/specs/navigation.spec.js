@@ -2,6 +2,7 @@ const { expect } = require('chai');
 const LoginPage = require('../pageobjects/login.page.js');
 const FormsPage = require('../pageobjects/forms.page.js');
 const SwipePage = require('../pageobjects/swipe.page.js');
+const Utils = require('../utils/utils.js');
 
 describe('Fluxo de Navegação - Desafio Mobile', () => {
 
@@ -29,20 +30,15 @@ describe('Fluxo de Navegação - Desafio Mobile', () => {
         expect(isInputVisible).to.be.true;
     });
 
-    it('CT007 - Deve navegar para a tela de Swipe e verificar o carrossel', async () => {
-        // Navega para a aba Swipe
-        await SwipePage.navigateTo(SwipePage.btnSwipe);
-
-        await SwipePage.carousel.waitForDisplayed({ timeout: 5000 });
+    it('CT007 - Deve validar a existência de todas as opções do carrossel na árvore de elementos', async () => {
+        await SwipePage.navigateTo(SwipePage.btnSwipe); 
         
-        // Valida se o container do carrossel foi carregado com sucesso
-        await browser.waitUntil(
-        async () => await SwipePage.carouselContainer.isDisplayed(),
-            {
-                timeout: 30000,
-                timeoutMsg: 'O carrossel não ficou visível após 30 segundos de tentativas'
-            }
-        );
-        expect(isCarouselVisible).to.be.true;
+        // 1. Valida se o contêiner principal do carrossel está visível
+        await Utils.waitForElementToBeDisplayed(SwipePage.carouselContainer, 'Contêiner do Carrossel');
+        expect(await SwipePage.carouselContainer.isDisplayed()).to.be.true;
+
+        // 2. Valida a existência estática de todos os cards (0 a 5) de uma vez só
+        const todosExistem = await SwipePage.validarTodosOsItensDoCarrossel();
+        expect(todosExistem).to.be.true;
     });
 });
