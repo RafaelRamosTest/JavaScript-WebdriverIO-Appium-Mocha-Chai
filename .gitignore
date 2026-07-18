@@ -28,6 +28,7 @@ Thumbs.db
 .env.local
 
 # Se você baixa os arquivos .apk ou .app direto na raiz do projeto para testar
+*.zip
 *.apk
 *.aab
 *.app

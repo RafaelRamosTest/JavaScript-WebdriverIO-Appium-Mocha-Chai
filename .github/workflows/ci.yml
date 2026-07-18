@@ -40,6 +40,19 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Baixar último APK do WebdriverIO Demo App
+        run: |
+          mkdir -p app
+          # Captura as informações da última release via API do GitHub
+          RELEASE_JSON=$(curl -s https://api.github.com/repos/webdriverio/native-demo-app/releases/latest)
+          
+          # Extrai a URL de download do APK e a Tag da versão (ex: v2.2.0)
+          DOWNLOAD_URL=$(echo "$RELEASE_JSON" | grep "browser_download_url.*apk" | cut -d '"' -f 4)
+          VERSION_TAG=$(echo "$RELEASE_JSON" | grep '"tag_name":' | cut -d '"' -f 4)
+          
+          # Baixa o arquivo salvando com o nome dinâmico solicitado
+          curl -L "$DOWNLOAD_URL" -o "./app/android.wdio.native.app.${VERSION_TAG}.apk"
+
       - name: Instalar e configurar Appium
         run: |
           npm install -g appium
