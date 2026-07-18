@@ -50,10 +50,15 @@ jobs:
         with:
           api-level: ${{ matrix.api-level }}
           target: ${{ matrix.target }}
-          arch: x86_64
+          arch: arm64-v8a
           profile: pixel_4
+          # Opções para deixar o emulador o mais leve possível:
+          disable-audio: true
+          disable-animations: true
+          show-lottie-animation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -no-audio -no-boot-anim -camera-back none
           script: npm run test:android
-        continue-on-error: true # Garante a geração do report mesmo se houver falhas de teste
+        continue-on-error: true
 
       - name: Upload dos Resultados Brutos do Allure
         if: always()
