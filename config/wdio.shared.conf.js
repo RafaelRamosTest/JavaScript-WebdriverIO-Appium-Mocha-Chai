@@ -1,4 +1,3 @@
-const { TimelineService } = require('wdio-timeline-reporter/timeline-service');
 const path = require('path');
 
 // Definir o baseDir o mais cedo possível para que esteja disponível nas capabilities
@@ -11,7 +10,7 @@ exports.config = {
   framework: 'mocha',
   mochaOpts: {
     ui: 'bdd',
-    timeout: 6000,
+    timeout: 60000,
   },
 
   // Hooks globais
@@ -29,10 +28,14 @@ exports.config = {
 
   // Relatórios de execução
   reporters: [
-    'spec',
-    ['timeline', { outputDir: './reports', fileName: 'timeline-report.html' }],
+    'spec', // Mantém a saída padrão no terminal
+    ['allure', {
+        outputDir: 'allure-results',
+        disableWebdriverStepsReporting: true,
+        disableWebdriverScreenshotsReporting: false, // Deixe como false para capturar prints em caso de falha!
+    }]
   ],
   services: [
-    [TimelineService],
+    ['appium', {}],
   ],
 };

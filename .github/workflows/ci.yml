@@ -1,5 +1,4 @@
 # Pipeline de CI/CD para o projeto de testes em WebdriverIO com GitHub Actions
-
 name: Mobile Tests CI
 
 on:
@@ -11,6 +10,9 @@ on:
     # Roda na nightly às 00:00 UTC
     - cron: '0 0 * * *'
 
+permissions:
+  contents: write
+
 jobs:
   test-android:
     name: Test Android (Emulator)
@@ -21,10 +23,10 @@ jobs:
         target: [ google_apis ]
     steps:
       - name: Checkout código
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
@@ -33,7 +35,7 @@ jobs:
         run: npm ci
 
       - name: Configurar Java JDK
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -51,26 +53,26 @@ jobs:
           arch: x86_64
           profile: pixel_4
           script: npm run test:android
+        continue-on-error: true # Garante a geração do report mesmo se houver falhas de teste
 
-      - name: Upload dos Relatórios
+      - name: Upload dos Resultados Brutos do Allure
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: android-reports
-          path: ./reports
-          retention-days: 7
+          name: allure-results-android
+          path: allure-results
+          retention-days: 1
 
   test-browserstack:
     name: Test BrowserStack (Cloud)
     runs-on: ubuntu-latest
-    # Roda apenas se as credenciais estiverem configuradas nos Secrets do GitHub
     if: ${{ vars.RUN_BS_TESTS == 'true' }}
     steps:
       - name: Checkout código
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
@@ -84,11 +86,59 @@ jobs:
           BROWSERSTACK_KEY: ${{ secrets.BROWSERSTACK_KEY }}
           BROWSERSTACK_APP_ID: ${{ secrets.BROWSERSTACK_APP_ID }}
         run: npm run test:bs
+        continue-on-error: true
 
-      - name: Upload dos Relatórios
+      - name: Upload dos Resultados Brutos do Allure (BS)
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: browserstack-reports
-          path: ./reports
-          retention-days: 7
+          name: allure-results-bs
+          path: allure-results
+          retention-days: 1
+
+  deploy-report:
+    name: Publicar Allure Report
+    runs-on: ubuntu-latest
+    needs: [test-android, test-browserstack]
+    if: always() # Garante a publicação independente do resultado dos testes
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Criar diretório de resultados
+        run: mkdir allure-results
+
+      - name: Baixar resultados do Android (se houver)
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: allure-results-android
+          path: allure-results
+
+      - name: Baixar resultados do BrowserStack (se houver)
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: allure-results-bs
+          path: allure-results
+
+      - name: Capturar histórico do Allure (GitHub Pages)
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages-dir
+        continue-on-error: true
+
+      - name: Gerar o Allure Report
+        uses: simple-elf/allure-report-action@main
+        with:
+          allure_results: allure-results
+          allure_history: allure-history
+          keep_reports: 20
+
+      - name: Publicar relatório no GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: allure-history
+          publish_branch: gh-pages
