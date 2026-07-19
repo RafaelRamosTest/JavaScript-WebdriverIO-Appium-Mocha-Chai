@@ -42,8 +42,8 @@ jobs:
           profile: pixel_6
           disable-animations: true
           force-avd-creation: false
-          # ⚡ Parâmetros extras para fazer o emulador rodar muito mais rápido no CI:
-          emulator-options: -no-window -gpu l जोड़ा -no-audio -no-boot-anim -camera-back none
+          # ⚡ CORREÇÃO AQUI: Trocado '-gpu l जोड़ा' pelo driver estável 'swiftshader_indirect'
+          emulator-options: -no-window -gpu swiftshader_indirect -no-audio -no-boot-anim -camera-back none
           script: |
             echo "⏳ Aguardando o sistema do Android responder por completo..."
             adb wait-for-device
