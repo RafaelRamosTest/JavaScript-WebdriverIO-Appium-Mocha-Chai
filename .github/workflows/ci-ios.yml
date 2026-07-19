@@ -1,0 +1,85 @@
+name: WebDriverIO iOS CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  test-ios:
+    name: Executar Testes iOS
+    runs-on: macos-14
+    
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Instalar dependências do projeto
+        run: npm ci
+
+      - name: Instalar e configurar Appium e Driver XCUITest
+        run: |
+          npm install -g appium
+          appium driver install xcuitest
+
+      - name: Iniciar o Simulador do iPhone
+        run: |
+          xcrun simctl boot "iPhone 15" || true
+
+      - name: Executar os testes de iOS
+        run: npm run test:ios
+
+      - name: Upload dos resultados do Allure
+        uses: actions/upload-artifact@v4
+        if: always() # Garante o upload mesmo se os testes falharem
+        with:
+          name: allure-results-ios
+          path: allure-results/
+
+  deploy-report:
+    name: Publicar Allure Report iOS
+    runs-on: ubuntu-latest # O deploy do report pode rodar em Linux para economizar minutos de Mac
+    needs: [test-ios]
+    if: always()
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Criar diretório de resultados
+        run: mkdir -p allure-results
+
+      - name: Baixar resultados do iOS
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: allure-results-ios
+          path: allure-results
+
+      - name: Capturar histórico do Allure (GitHub Pages)
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages-dir
+        continue-on-error: true
+
+      - name: Gerar o Allure Report
+        uses: simple-elf/allure-report-action@main
+        with:
+          allure_results: allure-results
+          allure_history: allure-history
+          keep_reports: 20
+
+      - name: Publicar relatório no GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: allure-history
+          publish_branch: gh-pages

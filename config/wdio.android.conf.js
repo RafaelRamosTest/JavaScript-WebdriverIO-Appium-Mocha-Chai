@@ -88,6 +88,8 @@ exports.config = {
     // Injeta dinamicamente o caminho absoluto do arquivo real descoberto/baixado
     'appium:app': apkPathFinal, 
     'appium:deviceName': 'Android_Local',
+    'appium:ignoreHiddenApiPolicyError': true,
+    'appium:adbExecTimeout': 60000,
     maxInstances: 1,
   }],
   services: [
