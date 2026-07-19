@@ -121,7 +121,7 @@ jobs:
         continue-on-error: true
 
       - name: Gerar Allure Report Unificado
-        uses: simple-elf/allure-report-action@v1.1.2
+        uses: simple-elf/allure-report-action@v1 # 🎯 Corrigido para a tag estável estável v1 reconhecida pelo repositório
         with:
           allure_results: combined-results
           allure_history: allure-history
