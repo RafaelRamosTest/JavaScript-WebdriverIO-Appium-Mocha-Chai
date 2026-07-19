@@ -1,0 +1,135 @@
+name: WebDriverIO Mobile CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  # 🤖 JOB DO ANDROID (Roda em paralelo)
+  test-android:
+    name: Executar Testes Android
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Instalar dependências do projeto
+        run: npm ci
+
+      - name: Habilitar aceleração KVM (Hardware)
+        run: |
+          echo "🚀 Configurando aceleração para o emulador..."
+          sudo chown $USER /dev/kvm
+
+      - name: Executar testes no Emulador Android
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          script: npm run test:android
+
+      - name: Salvar Resultados do Android
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: results-android
+          path: allure-results
+          retention-days: 1
+
+  # 🍏 JOB DO IOS (Roda em paralelo no Mac)
+  test-ios:
+    name: Executar Testes iOS
+    runs-on: macos-14
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Instalar dependências do projeto
+        run: npm ci
+
+      - name: Instalar e configurar Appium e Driver XCUITest
+        run: |
+          npm install -g appium
+          appium driver install xcuitest@7
+
+      - name: Iniciar o Simulador do iPhone
+        run: |
+          xcrun simctl boot "iPhone 15" || true
+
+      - name: Executar os testes de iOS
+        run: npm run test:ios
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Salvar Resultados do iOS
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: results-ios
+          path: allure-results
+          retention-days: 1
+
+  # 📊 JOB DE UNIFICAÇÃO (Espera os dois anteriores terminarem)
+  generate-report:
+    name: Consolidated Allure Report
+    needs: [test-android, test-ios]
+    runs-on: ubuntu-latest
+    if: always() # Garante que o relatório seja gerado mesmo se Android ou iOS falharem nos testes
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Baixar Histórico do Allure (GitHub Pages)
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: allure-history
+        continue-on-error: true
+
+      - name: Baixar Resultados do Android
+        uses: actions/download-artifact@v4
+        with:
+          name: results-android
+          path: combined-results
+        continue-on-error: true
+
+      - name: Baixar Resultados do iOS
+        uses: actions/download-artifact@v4
+        with:
+          name: results-ios
+          path: combined-results
+        continue-on-error: true
+
+      - name: Gerar Allure Report Unificado
+        uses: simple-elf/allure-report-action@v1.1.2
+        with:
+          allure_results: combined-results
+          allure_history: allure-history
+          keep_reports: 30
+
+      - name: Publicar no GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: allure-history
+          publish_branch: gh-pages
