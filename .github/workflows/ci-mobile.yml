@@ -40,7 +40,19 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: pixel_6
-          script: npm run test:android
+          disable-animations: true
+          force-avd-creation: false
+          # ⚡ Parâmetros extras para fazer o emulador rodar muito mais rápido no CI:
+          emulator-options: -no-window -gpu l जोड़ा -no-audio -no-boot-anim -camera-back none
+          script: |
+            echo "⏳ Aguardando o sistema do Android responder por completo..."
+            adb wait-for-device
+            # Trava o pipeline até que a interface do usuário (Home Screen) esteja carregada
+            until adb shell getprop sys.boot_completed | grep -m 1 "1"; do
+              sleep 3
+            done
+            echo "✅ Android carregado com sucesso! Iniciando os testes..."
+            npm run test:android
 
       - name: Salvar Resultados do Android
         if: always()
@@ -94,7 +106,7 @@ jobs:
     name: Consolidated Allure Report
     needs: [test-android, test-ios]
     runs-on: ubuntu-latest
-    if: always() # Garante que o relatório seja gerado mesmo se Android ou iOS falharem nos testes
+    if: always()
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -135,7 +147,6 @@ jobs:
           path: combined-results
         continue-on-error: true
 
-      # 🔄 Copia o histórico antigo para dentro dos resultados atuais para manter o gráfico de tendências funcional
       - name: Mesclar Histórico de Execuções
         run: |
           mkdir -p combined-results
