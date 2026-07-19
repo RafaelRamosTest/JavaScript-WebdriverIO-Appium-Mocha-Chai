@@ -25,15 +25,26 @@ jobs:
       - name: Instalar dependências do projeto
         run: npm ci
 
-      - name: Executar os testes de Android
-        run: npm run test:android
+      - name: Habilitar aceleração KVM (Hardware)
+        run: |
+          echo "🚀 Configurando aceleração para o emulador..."
+          sudo chown $USER /dev/kvm
+
+      - name: Executar testes no Emulador Android
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          script: npm run test:android
 
       - name: Upload dos resultados do Allure
         uses: actions/upload-artifact@v4
-        if: always() # Garante o upload mesmo se os testes falharem
+        if: always()
         with:
           name: allure-results-android
-          path: allure-results/ # Alinhado com a pasta padrão de relatórios do WDIO
+          path: allure-results/
 
   deploy-report:
     name: Publicar Allure Report Android
