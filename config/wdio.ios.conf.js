@@ -17,8 +17,16 @@ function garantirAppIosAtualizado() {
     console.log('\n🔍 [WebdriverIO] Checando atualizações do aplicativo demo iOS no GitHub...');
     
     try {
-        const responseText = execSync('curl -s https://api.github.com/repos/webdriverio/native-demo-app/releases/latest').toString();
+        // 🔐 Injeta o token padrão do GitHub Actions se disponível para contornar o limite de requisições anônimas
+        const tokenHeader = process.env.GITHUB_TOKEN ? `-H "Authorization: token ${process.env.GITHUB_TOKEN}"` : '';
+        const responseText = execSync(`curl -s ${tokenHeader} https://api.github.com/repos/webdriverio/native-demo-app/releases/latest`).toString();
+        
         const releaseInfo = JSON.parse(responseText);
+        
+        // Valida se a resposta retornou os assets esperados ou se a API travou no limite/erro
+        if (!releaseInfo || !releaseInfo.assets) {
+            throw new Error(releaseInfo.message || 'Resposta inválida da API do GitHub (Sem assets listados).');
+        }
         
         const versionTag = releaseInfo.tag_name;
         
@@ -59,9 +67,11 @@ function garantirAppIosAtualizado() {
     } catch (error) {
         console.error('⚠️ [WebdriverIO] Não foi possível verificar atualizações do iOS: ', error.message);
         
-        // Fallback: Se falhar a conexão, busca o ZIP que já estiver na pasta
-        const arquivos = fs.readdirSync(appDir);
-        const zipExistente = arquivos.find(file => file.startsWith('ios.simulator.wdio.native.app.') && file.endsWith('.zip'));
+        // 🔄 Fallback Seguro: Se a API falhar (ex: Rate Limit), captura qualquer arquivo local presente na pasta apps
+        console.log('🔄 Tentando recuperar último arquivo local disponível...');
+        const arquivos = fs.existsSync(appDir) ? fs.readdirSync(appDir) : [];
+        const zipExistente = arquivos.find(file => file.toLowerCase().includes('ios') && file.endsWith('.zip'));
+        
         if (zipExistente) {
             iosAppPathFinal = path.join(appDir, zipExistente);
             console.log(`📋 Usando o ZIP do iOS encontrado localmente: ${iosAppPathFinal}\n`);
@@ -74,7 +84,10 @@ garantirAppIosAtualizado();
 
 exports.config = {
   ...config,
+  
+  // Sincronismo global aumentado para absorver a lentidão inicial do simulador no CI
   waitforTimeout: 60000,
+  
   // Porta fixa para evitar spawns em portas randômicas no CI
   port: 4723,
 
@@ -92,7 +105,7 @@ exports.config = {
     if (iosAppPathFinal) {
         console.log(`📱 Iniciando sessões de testes com o App iOS: ${iosAppPathFinal}\n`);
         
-        // Atualiza dinamicamente as capabilities globais antes da execução dos workers iniciar
+        // Garante que TODOS os workers ativos recebam a string do caminho real (não vazia)
         capabilities.forEach(cap => {
             cap['appium:app'] = iosAppPathFinal;
         });
