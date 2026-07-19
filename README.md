@@ -22,6 +22,7 @@ Para rodar este projeto localmente, certifique-se de ter instalado:
 3.  **Appium Server** (instale via `npm install -g appium`)
 4.  **Android Studio** (para rodar o emulador Android)
 5.  **Xcode** (necessário para rodar o simulador iOS em macOS)
+6.  **Appium Inspector** (Inspeção e Mapeamento de Elementos Mobile)
 
 ---
 
