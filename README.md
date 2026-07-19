@@ -53,13 +53,20 @@ Ao executar os testes, os resultados são gerados na pasta allure-results. Para 
 Bash
 npx allure generate allure-results --clean -o allure-report
 npx allure open allure-report
-📂 Estrutura do Projeto
-Plaintext
-├── apps/               # APKs e arquivos .app para testes
-├── config/             # Configurações do WebdriverIO (capabilities)
-├── src/
-│   ├── pages/          # Page Objects (elementos e ações)
-│   └── specs/          # Arquivos de teste (cenários)
+## 📂 Estrutura do Projeto
+
+```text
 ├── .github/workflows/  # Pipelines de CI/CD
+├── allure-results/     # Resultados gerados pelos testes
+├── apps/               # APKs e arquivos .app
+├── config/             # Configurações do WebdriverIO
+├── node_modules/       # Dependências do projeto
+├── src/                # Código-fonte
+│   ├── data/           # Massas de dados para testes
+│   ├── pageobjects/    # Mapeamento de elementos (Page Objects)
+│   ├── specs/          # Cenários de teste
+│   └── utils/          # Funções utilitárias
+├── .gitignore          # Arquivos ignorados pelo Git
+├── package-lock.json   # Travamento de dependências
 ├── package.json        # Dependências e scripts
 └── README.md           # Documentação do projeto
