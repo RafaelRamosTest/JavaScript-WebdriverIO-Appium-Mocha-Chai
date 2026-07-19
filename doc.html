@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentação do Projeto - Automação Mobile</title>
+    <style>
+        :root { --primary: #2563eb; --bg: #f8fafc; --text: #334155; --code-bg: #1e293b; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; line-height: 1.6; color: var(--text); background: var(--bg); margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1, h2, h3 { color: var(--primary); }
+        pre { background: var(--code-bg); color: #f8fafc; padding: 15px; border-radius: 8px; overflow-x: auto; }
+        code { font-family: monospace; background: #e2e8f0; padding: 2px 4px; border-radius: 4px; }
+        .box { border-left: 4px solid var(--primary); padding-left: 15px; margin: 20px 0; background: #eff6ff; padding: 15px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 Projeto de Automação Mobile - WebdriverIO</h1>
+        <p>Suíte de testes E2E robusta utilizando <strong>WebdriverIO</strong>, <strong>Appium</strong>, <strong>Mocha</strong> e <strong>Chai</strong>.</p>
+
+        <h2>🛠️ Ferramentas e Downloads</h2>
+        <ul>
+            <li><strong>Android Studio:</strong> <a href="https://developer.android.com/studio" target="_blank">Baixar aqui</a></li>
+            <li><strong>Appium Inspector:</strong> <a href="https://github.com/appium/appium-inspector/releases" target="_blank">Baixar aqui</a></li>
+        </ul>
+
+        <h2>⚙️ Configuração do Ambiente Local</h2>
+        <h3>Android Studio</h3>
+        <p>Utilizado para gerenciar o SDK e emuladores. Configure a variável <code>ANDROID_HOME</code> e adicione as pastas <code>platform-tools</code> e <code>emulator</code> ao seu <code>PATH</code> do sistema. No Device Manager, crie um emulador (ex: Pixel 6) com aceleração de hardware.</p>
+
+        <h3>Appium Inspector</h3>
+        <p>Ferramenta visual para mapeamento de elementos. Conecte utilizando as <em>Remote Capabilities</em> (platformName, deviceName, etc) conforme seu <code>wdio.conf.js</code>. Priorize o uso de <code>accessibility ID</code> para seletores mais estáveis.</p>
+
+        <h2>🚀 Como Executar Localmente</h2>
+        <p>Certifique-se de que o Appium Server está rodando e o emulador/simulador aberto.</p>
+        <pre># 1. Instalar dependências
+npm install
+
+# 2. Executar Android
+npm run test:android
+
+# 3. Executar iOS
+npm run test:ios</pre>
+
+        <h2>📊 Relatórios e CI/CD</h2>
+        <p>Os testes são executados automaticamente via <strong>GitHub Actions</strong>. Para gerar e visualizar o relatório <strong>Allure</strong> localmente:</p>
+        <pre>npx allure generate allure-results --clean -o allure-report
+npx allure open allure-report</pre>
+
+        <h2>📂 Estrutura do Projeto</h2>
+        <pre>├── .github/workflows/  # Pipelines de CI/CD
+├── allure-results/     # Resultados dos testes
+├── apps/               # Binários (APKs/APP)
+├── config/             # Configurações WDIO
+├── src/                # Fonte
+│   ├── data/           # Massas de dados
+│   ├── pageobjects/    # Mapeamento de telas
+│   ├── specs/          # Cenários de teste
+│   └── utils/          # Utilitários
+├── package.json        # Dependências e scripts
+└── README.md           # Documentação raiz</pre>
+    </div>
+</body>
+</html>
