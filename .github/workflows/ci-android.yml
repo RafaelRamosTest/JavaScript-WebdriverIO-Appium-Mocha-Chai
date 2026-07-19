@@ -73,7 +73,7 @@ jobs:
         continue-on-error: true
 
       - name: Gerar o Allure Report
-        uses: simple-elf/allure-report-action@main
+        uses: simple-elf/allure-report-action@master
         with:
           allure_results: allure-results
           allure_history: allure-history
