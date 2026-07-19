@@ -7,7 +7,6 @@ const { execSync } = require('child_process');
 let iosAppPathFinal = '';
 
 function garantirAppIosAtualizado() {
-    // Alinhado para salvar na pasta compartilhada ./apps
     const appDir = path.join(__dirname, '..', 'apps');
     
     if (!fs.existsSync(appDir)) {
@@ -67,7 +66,7 @@ function garantirAppIosAtualizado() {
     } catch (error) {
         console.error('⚠️ [WebdriverIO] Não foi possível verificar atualizações do iOS: ', error.message);
         
-        // 🔄 Fallback Seguro: Se a API falhar (ex: Rate Limit), captura qualquer arquivo local presente na pasta apps
+        // 🔄 Fallback Seguro: Captura qualquer arquivo local presente na pasta apps
         console.log('🔄 Tentando recuperar último arquivo local disponível...');
         const arquivos = fs.existsSync(appDir) ? fs.readdirSync(appDir) : [];
         const zipExistente = arquivos.find(file => file.toLowerCase().includes('ios') && file.endsWith('.zip'));
@@ -85,8 +84,8 @@ garantirAppIosAtualizado();
 exports.config = {
   ...config,
   
-  // Sincronismo global aumentado para absorver a lentidão inicial do simulador no CI
-  waitforTimeout: 60000,
+  // Sobrescreve explicitamente o timeout do shared para 30 segundos
+  waitforTimeout: 30000,
   
   // Porta fixa para evitar spawns em portas randômicas no CI
   port: 4723,
@@ -102,15 +101,16 @@ exports.config = {
   },
   
   onPrepare: function (config, capabilities) {
-    if (iosAppPathFinal) {
+    // 🚨 SEGURANÇA MÁXIMA: Valida se a string não está vazia ou nula antes de iniciar os workers
+    if (iosAppPathFinal && iosAppPathFinal.trim() !== '') {
         console.log(`📱 Iniciando sessões de testes com o App iOS: ${iosAppPathFinal}\n`);
         
-        // Garante que TODOS os workers ativos recebam a string do caminho real (não vazia)
+        // Garante que TODOS os workers ativos recebam a string do caminho real
         capabilities.forEach(cap => {
             cap['appium:app'] = iosAppPathFinal;
         });
     } else {
-        throw new Error('❌ Erro crítico: Nenhum arquivo .zip do iOS foi encontrado para iniciar os testes!');
+        throw new Error('❌ Erro crítico interrompido no onPrepare: O caminho do arquivo .zip do iOS está vazio. O download falhou e não há fallback local na pasta /apps!');
     }
   },
 
