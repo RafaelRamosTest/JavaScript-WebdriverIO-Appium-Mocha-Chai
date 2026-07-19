@@ -11,7 +11,7 @@ permissions:
   contents: write
 
 jobs:
-  # 🤖 JOB DO ANDROID (Roda em paralelo)
+  # 🤖 JOB DO ANDROID (Roda em paralelo no Linux)
   test-android:
     name: Executar Testes Android
     runs-on: ubuntu-latest
@@ -99,6 +99,21 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Configurar Java (Necessário para o Allure CLI)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Instalar Allure CLI de forma nativa
+        run: |
+          echo "📥 Baixando Allure CLI..."
+          curl -o allure-commandline.tgz -QsL https://repo.maven.apache.org/maven2/io/qameta/allure/allure-commandline/2.29.0/allure-commandline-2.29.0.tgz
+          tar -zxf allure-commandline.tgz
+          sudo mv allure-2.29.0 /opt/allure
+          sudo ln -s /opt/allure/bin/allure /usr/bin/allure
+          allure --version
+
       - name: Baixar Histórico do Allure (GitHub Pages)
         uses: actions/checkout@v4
         with:
@@ -120,16 +135,21 @@ jobs:
           path: combined-results
         continue-on-error: true
 
-      - name: Gerar Allure Report Unificado
-        uses: simple-elf/allure-report-action@v1 # 🎯 Corrigido para a tag estável estável v1 reconhecida pelo repositório
-        with:
-          allure_results: combined-results
-          allure_history: allure-history
-          keep_reports: 30
+      # 🔄 Copia o histórico antigo para dentro dos resultados atuais para manter o gráfico de tendências funcional
+      - name: Mesclar Histórico de Execuções
+        run: |
+          mkdir -p combined-results
+          if [ -d "allure-history/history" ]; then
+            cp -r allure-history/history combined-results/
+          fi
+
+      - name: Gerar Allure Report Unificado de forma nativa
+        run: |
+          allure generate combined-results --clean -o allure-report-output
 
       - name: Publicar no GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: allure-history
+          publish_dir: allure-report-output
           publish_branch: gh-pages
