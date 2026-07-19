@@ -11,7 +11,7 @@ permissions:
   contents: write
 
 jobs:
-  # 🤖 JOB DO ANDROID (Roda em paralelo no Linux)
+  # 🤖 JOB DO ANDROID
   test-android:
     name: Executar Testes Android
     runs-on: ubuntu-latest
@@ -28,10 +28,8 @@ jobs:
       - name: Instalar dependências do projeto
         run: npm ci
 
-      - name: Habilitar aceleração KVM (Hardware)
-        run: |
-          echo "🚀 Configurando aceleração para o emulador..."
-          sudo chown $USER /dev/kvm
+      - name: Habilitar aceleração KVM
+        run: sudo chown $USER /dev/kvm
 
       - name: Executar testes no Emulador Android
         uses: reactivecircus/android-emulator-runner@v2
@@ -42,16 +40,14 @@ jobs:
           profile: pixel_6
           disable-animations: true
           force-avd-creation: false
-          # ⚡ CORREÇÃO AQUI: Trocado '-gpu l जोड़ा' pelo driver estável 'swiftshader_indirect'
+          # Parâmetros de performance otimizados para o GitHub Actions
           emulator-options: -no-window -gpu swiftshader_indirect -no-audio -no-boot-anim -camera-back none
           script: |
-            echo "⏳ Aguardando o sistema do Android responder por completo..."
+            echo "⏳ Aguardando boot completo do Android..."
             adb wait-for-device
-            # Trava o pipeline até que a interface do usuário (Home Screen) esteja carregada
-            until adb shell getprop sys.boot_completed | grep -m 1 "1"; do
-              sleep 3
-            done
-            echo "✅ Android carregado com sucesso! Iniciando os testes..."
+            # Trava o pipeline usando um loop interno dentro do shell do dispositivo
+            adb shell "while [ \"$(getprop sys.boot_completed)\" != '1' ]; do sleep 3; done"
+            echo "✅ Android carregado! Iniciando testes..."
             npm run test:android
 
       - name: Salvar Resultados do Android
@@ -62,7 +58,7 @@ jobs:
           path: allure-results
           retention-days: 1
 
-  # 🍏 JOB DO IOS (Roda em paralelo no Mac)
+  # 🍏 JOB DO IOS
   test-ios:
     name: Executar Testes iOS
     runs-on: macos-14
@@ -76,20 +72,18 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Instalar dependências do projeto
+      - name: Instalar dependências
         run: npm ci
 
-      - name: Instalar e configurar Appium e Driver XCUITest
+      - name: Configurar Appium e Driver
         run: |
           npm install -g appium
           appium driver install xcuitest@7
 
-      - name: Iniciar o Simulador do iPhone
+      - name: Iniciar Simulador e Executar Testes
         run: |
           xcrun simctl boot "iPhone 15" || true
-
-      - name: Executar os testes de iOS
-        run: npm run test:ios
+          npm run test:ios
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -101,7 +95,7 @@ jobs:
           path: allure-results
           retention-days: 1
 
-  # 📊 JOB DE UNIFICAÇÃO (Espera os dois anteriores terminarem)
+  # 📊 JOB DE RELATÓRIO
   generate-report:
     name: Consolidated Allure Report
     needs: [test-android, test-ios]
@@ -111,52 +105,26 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Configurar Java (Necessário para o Allure CLI)
+      - name: Configurar Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Instalar Allure CLI de forma nativa
+      - name: Baixar e Instalar Allure CLI
         run: |
-          echo "📥 Baixando Allure CLI..."
           curl -o allure-commandline.tgz -QsL https://repo.maven.apache.org/maven2/io/qameta/allure/allure-commandline/2.29.0/allure-commandline-2.29.0.tgz
           tar -zxf allure-commandline.tgz
           sudo mv allure-2.29.0 /opt/allure
           sudo ln -s /opt/allure/bin/allure /usr/bin/allure
-          allure --version
 
-      - name: Baixar Histórico do Allure (GitHub Pages)
-        uses: actions/checkout@v4
-        with:
-          ref: gh-pages
-          path: allure-history
-        continue-on-error: true
-
-      - name: Baixar Resultados do Android
+      - name: Baixar Resultados
         uses: actions/download-artifact@v4
         with:
-          name: results-android
           path: combined-results
-        continue-on-error: true
 
-      - name: Baixar Resultados do iOS
-        uses: actions/download-artifact@v4
-        with:
-          name: results-ios
-          path: combined-results
-        continue-on-error: true
-
-      - name: Mesclar Histórico de Execuções
-        run: |
-          mkdir -p combined-results
-          if [ -d "allure-history/history" ]; then
-            cp -r allure-history/history combined-results/
-          fi
-
-      - name: Gerar Allure Report Unificado de forma nativa
-        run: |
-          allure generate combined-results --clean -o allure-report-output
+      - name: Gerar Report
+        run: allure generate combined-results --clean -o allure-report-output
 
       - name: Publicar no GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
