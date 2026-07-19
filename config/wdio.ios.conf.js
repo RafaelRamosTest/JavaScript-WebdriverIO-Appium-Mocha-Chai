@@ -7,7 +7,7 @@ const { execSync } = require('child_process');
 let iosAppPathFinal = '';
 
 function garantirAppIosAtualizado() {
-    // Alinhado para salvar na pasta compartilhada ./src/apps
+    // Alinhado para salvar na pasta compartilhada ./apps
     const appDir = path.join(__dirname, '..', 'apps');
     
     if (!fs.existsSync(appDir)) {
@@ -17,14 +17,20 @@ function garantirAppIosAtualizado() {
     console.log('\n🔍 [WebdriverIO] Checando atualizações do aplicativo demo iOS no GitHub...');
     
     try {
-        const releaseInfo = execSync('curl -s https://api.github.com/repos/webdriverio/native-demo-app/releases/latest').toString();
-        const versionMatch = releaseInfo.match(/"tag_name":\s*"(.*?)"/);
-        // Filtra especificamente o pacote .app.zip do simulador iOS
-        const urlMatch = releaseInfo.match(/"browser_download_url":\s*"(.*?\.app\.zip)"/);
+        const responseText = execSync('curl -s https://api.github.com/repos/webdriverio/native-demo-app/releases/latest').toString();
+        const releaseInfo = JSON.parse(responseText);
+        
+        const versionTag = releaseInfo.tag_name;
+        
+        // Busca o asset dinamicamente que seja para o simulador iOS e termine em .zip
+        const iosAsset = releaseInfo.assets.find(asset => 
+            asset.name.toLowerCase().includes('ios') && 
+            asset.name.toLowerCase().includes('simulator') && 
+            asset.name.endsWith('.zip')
+        );
 
-        if (versionMatch && urlMatch) {
-            const versionTag = versionMatch[1];
-            const downloadUrl = urlMatch[1];
+        if (versionTag && iosAsset) {
+            const downloadUrl = iosAsset.browser_download_url;
             const zipName = `ios.simulator.wdio.native.app.${versionTag}.zip`;
             const zipPath = path.join(appDir, zipName);
 
@@ -47,6 +53,8 @@ function garantirAppIosAtualizado() {
             console.log('✨ [WebdriverIO] Download do iOS concluído com sucesso!\n');
             
             iosAppPathFinal = zipPath;
+        } else {
+            throw new Error('Não foi possível mapear a URL de download nas tags do GitHub Assets.');
         }
     } catch (error) {
         console.error('⚠️ [WebdriverIO] Não foi possível verificar atualizações do iOS: ', error.message);
@@ -66,6 +74,10 @@ garantirAppIosAtualizado();
 
 exports.config = {
   ...config,
+  waitforTimeout: 60000,
+  // Porta fixa para evitar spawns em portas randômicas no CI
+  port: 4723,
+
   specs: [
     path.join(__dirname, '../src/specs/**/*.js')
   ],
@@ -79,25 +91,37 @@ exports.config = {
   onPrepare: function (config, capabilities) {
     if (iosAppPathFinal) {
         console.log(`📱 Iniciando sessões de testes com o App iOS: ${iosAppPathFinal}\n`);
+        
+        // Atualiza dinamicamente as capabilities globais antes da execução dos workers iniciar
+        capabilities.forEach(cap => {
+            cap['appium:app'] = iosAppPathFinal;
+        });
     } else {
-        throw new Error('❌ Erro crítico: Nenhum arquivo .app.zip do iOS foi encontrado para iniciar os testes!');
+        throw new Error('❌ Erro crítico: Nenhum arquivo .zip do iOS foi encontrado para iniciar os testes!');
     }
   },
 
   capabilities: [{
     platformName: 'iOS',
     'appium:automationName': 'XCUITest',
-    // Injeta dinamicamente o caminho do arquivo real baixado
     'appium:app': iosAppPathFinal, 
     'appium:deviceName': 'iPhone 15',
-    'appium:platformVersion': '17.2', // Versão de runtime estável padrão no runner macos-14
-    'appium:wdaLaunchTimeout': 180000,      // Dá até 3 minutos para o WebDriverAgent inicializar no simulador
-    'appium:wdaConnectionTimeout': 180000,  // Aumenta o tempo limite de comunicação com o driver do iOS
+    'appium:platformVersion': '17.2', 
+    'appium:wdaLaunchTimeout': 180000,     
+    'appium:wdaConnectionTimeout': 180000, 
     'appium:commandTimeouts': 60000,
     maxInstances: 1,
   }],
+  
   services: [
-    ...config.services,
-    ['appium', { args: { relaxedSecurity: true } }],
+    ...config.services.filter(s => s !== 'appium' && !(Array.isArray(s) && s[0] === 'appium')),
+    ['appium', { 
+        args: { 
+            address: '127.0.0.1',
+            port: 4723,
+            relaxedSecurity: true 
+        },
+        command: 'appium'
+    }],
   ],
 };

@@ -64,6 +64,7 @@ garantirApkAtualizado();
 
 exports.config = {
   ...config,
+  waitforTimeout: 60000,
   specs: [
     path.join(__dirname, '../src/specs/**/*.js')
   ],
