@@ -1,1 +1,1 @@
-{"uid":"b1a8273437954620fa374b796ffaacdd","name":"behaviors","children":[{"name":"CT008 - Deve digitar no campo de texto e validar o espelhamento em tempo real","uid":"93118f9802bc09db","parentUid":"b1a8273437954620fa374b796ffaacdd","status":"unknown","time":{"start":1784507212083},"flaky":false,"newFailed":false,"newPassed":false,"newBroken":false,"retriesCount":0,"retriesStatusChange":false,"parameters":["Android_Local"],"tags":[]}]}
+{"uid":"b1a8273437954620fa374b796ffaacdd","name":"behaviors","children":[]}
