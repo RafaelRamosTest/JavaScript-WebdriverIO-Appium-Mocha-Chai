@@ -15,6 +15,7 @@ jobs:
   test-android:
     runs-on: ubuntu-latest
     steps:
+      - name: Execução Testes Android
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: '20', cache: 'npm' }
@@ -38,6 +39,7 @@ jobs:
   test-ios:
     runs-on: macos-14
     steps:
+      - name: Execução Testes IOS
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: '20', cache: 'npm' }
@@ -60,19 +62,22 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     steps:
-      - uses: actions/download-artifact@v4
+      - name: Baixar artefatos
+        uses: actions/download-artifact@v4
         with:
           path: all-results
-      - uses: actions/setup-java@v4
+
+      - name: Listar arquivos baixados (Debug)
+        run: ls -R all-results
+
+      - name: Configurar Java e Allure
+        uses: actions/setup-java@v4
         with: { distribution: 'temurin', java-version: '17' }
       - run: |
           curl -o allure.tgz -QsL https://repo.maven.apache.org/maven2/io/qameta/allure/allure-commandline/2.29.0/allure-commandline-2.29.0.tgz
           tar -zxf allure.tgz
           sudo mv allure-2.29.0 /opt/allure
           sudo ln -s /opt/allure/bin/allure /usr/bin/allure
-      - run: allure generate all-results/allure-results-android all-results/allure-results-ios --clean -o allure-report
-      - uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: allure-report
-          publish_branch: gh-pages
+
+      - name: Gerar Relatório Consolidado
+        run: allure generate all-results/allure-results-android all-results/allure-results-ios --clean -o allure-report
