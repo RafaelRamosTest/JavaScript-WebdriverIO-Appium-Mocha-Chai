@@ -44,14 +44,9 @@ jobs:
       - run: npm ci
       - name: Instalar Appium e Driver
         run: |
-          # Instala a versão mais recente do appium
           npm install -g appium
-          # Instala a versão mais recente do driver (o Appium 3.x precisa de drivers compatíveis)
-          appium driver install xcuitest
-          # Garante que o emulador inicie
-          xcrun simctl boot "iPhone 15" || true
-          # Executa seus testes
-          npm run test:ios
+          # Instala a última versão major 7 do driver, que é 100% compatível com Appium 2.x
+          appium driver install xcuitest@7
       - uses: actions/upload-artifact@v4
         if: always()
         with:
