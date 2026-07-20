@@ -1,0 +1,4 @@
+"Status","Start Time","Stop Time","Duration in ms","Parent Suite","Suite","Sub Suite","Test Class","Test Method","Name","Description"
+"passed","Mon Jul 20 00:33:39 UTC 2026","Mon Jul 20 00:33:42 UTC 2026","3220","Fluxo de Componentes de Formulário - Desafio Mobile","","","","","CT010 - Deve abrir o menu suspenso (Dropdown) e selecionar a opção correta",""
+"passed","Mon Jul 20 00:33:37 UTC 2026","Mon Jul 20 00:33:39 UTC 2026","1461","Fluxo de Componentes de Formulário - Desafio Mobile","","","","","CT009 - Deve alternar o estado do componente Switch e validar alteração de texto",""
+"passed","Mon Jul 20 00:33:32 UTC 2026","Mon Jul 20 00:33:37 UTC 2026","5058","Fluxo de Componentes de Formulário - Desafio Mobile","","","","","CT008 - Deve digitar no campo de texto e validar o espelhamento em tempo real",""
