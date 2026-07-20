@@ -11,52 +11,55 @@ permissions:
   contents: write
 
 jobs:
-  # JOB ANDROID
   test-android:
     runs-on: ubuntu-latest
     steps:
-      - name: Execução Testes Android
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout do código
+        uses: actions/checkout@v4
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
         with: { node-version: '20', cache: 'npm' }
       - run: npm ci
       - run: sudo chown $USER /dev/kvm
-      - uses: reactivecircus/android-emulator-runner@v2
+      - name: Execução Testes Android
+        uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
           target: google_apis
           arch: x86_64
           profile: pixel_6
           script: npm run test:android
-      - uses: actions/upload-artifact@v4
+      - name: Salvar Resultados Android
         if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: allure-results-android
           path: allure-results
           retention-days: 1
 
-  # JOB IOS
   test-ios:
     runs-on: macos-14
     steps:
-      - name: Execução Testes IOS
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout do código
+        uses: actions/checkout@v4
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
         with: { node-version: '20', cache: 'npm' }
       - run: npm ci
-      - name: Instalar Appium e Driver
+      - name: Execução Testes IOS
         run: |
           npm install -g appium
-          # Instala a última versão major 7 do driver, que é 100% compatível com Appium 2.x
           appium driver install xcuitest@7
-      - uses: actions/upload-artifact@v4
+          xcrun simctl boot "iPhone 15" || true
+          npm run test:ios
+      - name: Salvar Resultados IOS
         if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: allure-results-ios
           path: allure-results
           retention-days: 1
 
-  # JOB RELATÓRIO FINAL
   generate-report:
     needs: [test-android, test-ios]
     runs-on: ubuntu-latest
@@ -66,10 +69,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: all-results
-
-      - name: Listar arquivos baixados (Debug)
-        run: ls -R all-results
-
       - name: Configurar Java e Allure
         uses: actions/setup-java@v4
         with: { distribution: 'temurin', java-version: '17' }
@@ -78,6 +77,11 @@ jobs:
           tar -zxf allure.tgz
           sudo mv allure-2.29.0 /opt/allure
           sudo ln -s /opt/allure/bin/allure /usr/bin/allure
-
       - name: Gerar Relatório Consolidado
         run: allure generate all-results/allure-results-android all-results/allure-results-ios --clean -o allure-report
+      - name: Publicar no GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: allure-report
+          publish_branch: gh-pages
